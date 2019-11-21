@@ -1,5 +1,17 @@
+import socket
+
 def seller():
 	print("Seller here")
+	host = socket.gethostname()
+	port = 8080
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.connect((host, port))
+
+	message = s.recv(1024)
+	print(message.decode("utf-8")) 
+
+	
+
 
 def buyer():
 	print("Buyer here")
