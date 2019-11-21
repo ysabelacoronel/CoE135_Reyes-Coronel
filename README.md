@@ -11,3 +11,9 @@ Concepts used:
  - I/O Handling
  - System Call (Time)
  - Socket Programming
+
+# Expected Results
+- Marketplace, Buyer and Seller Program
+- Simultaneoud buying, selling, and auctions
+- Private Messaging
+- List of all products (available and sold)
