@@ -2,7 +2,8 @@
 # - used separate text file for buyers, for easy checking
 # - will use arbitrary inventory and sellers database for checking
 # - serves as the server program for the private messaging
-# - normal send and receive in pm
+# - with interrupt handler in the pm and main program
+
 
 import socket
 
@@ -17,34 +18,55 @@ def pm(username):
 
     # will accept only one connection
     buyer.listen(1)
-    print("Waiting for buyer...")
+    print("Waiting for seller...")
 
     conn, addr = buyer.accept()
     print("Got a connection from " + str(addr))
 
-    seller_name = conn.recv(1024).decode()
-    resp = "Hello " + seller_name + "!"
-    conn.send(resp.encode())
-
-    conn.send(username.encode())
-
-    resp = conn.recv(1024).decode()
-    print(resp)
-
-    stay = 0
-    while stay == 0:
-        data = conn.recv(1024).decode()
-        print(data)
-        if data == "q":
-            print("Bye!")
-            stay = 1
-        else:
-            print(data)
-        
-        resp = input("Response: ", end = '')
+    try:
+        seller_name = conn.recv(1024).decode()
+        resp = "Hello " + seller_name + "!"
         conn.send(resp.encode())
-    
-    conn.close()
+
+        conn.send(username.encode())
+
+        resp = conn.recv(1024).decode()
+        print(resp)
+
+        stay = 0
+        while stay == 0:
+            print("Response: ", end = '')
+            resp = input()
+            if resp == "q":
+                print("Bye!")
+                conn.send(resp.encode())
+                stay = 1
+            elif resp == None:
+                print("Bye!")
+                stay = 1
+            else:
+                conn.send(resp.encode())
+
+            data = conn.recv(1024).decode()    
+            if data == "q":
+                print("Seller left the chat")
+                stay = 1
+            # elif data == None:
+            #     print("Seller left the chat")
+            #     stay = 1
+            # elif socket.error:
+            #     print("Seller left the chat")
+            #     stay = 1
+            else:
+                print("Seller:" + data)
+
+        conn.close()
+    except KeyboardInterrupt:
+        print("Bye!")
+        resp = "q"
+        conn.send(resp.encode())
+        conn.close()
+        quit()
 
 # username checker
 def account(username):
@@ -65,7 +87,7 @@ def buyer():
     correct = 0
     while correct == 0:
         buyer = input("Options: \n1: Load existing acccount\n2: Create a new one\n")
-
+        
         if buyer == "1":
             buyer_username = input("Username: ")
             b_chk = account(buyer_username)
@@ -128,7 +150,7 @@ def buyer():
             print('\n')
             stay = 0
         elif option == "4":
-            print("Private messaging...")
+            print("PRIVATE MESSAGING")
             pm(buyer_username)
             stay = 0
         elif option == "5":
@@ -139,12 +161,16 @@ def buyer():
 print('Welcome to the MARKETPLACE!')
 correct = 0
 while correct == 0:
-	user = input("Buyer or Seller? ")
-	if user == 'buyer' or user == 'Buyer':
-		buyer()
-		correct = 1
-	elif user == 'seller' or user == 'Seller':
-#		seller()
-		correct = 1
-	else:
-		print('Error: Incorrect input.')
+    try:
+        user = input("Buyer or Seller? ")
+        if user == 'buyer' or user == 'Buyer':
+            buyer()
+            correct = 1
+        elif user == 'seller' or user == 'Seller':
+    #		seller()
+            correct = 1
+        else:
+            print('Error: Incorrect input.')
+    except KeyboardInterrupt:
+        print("Bye!")
+        quit()
