@@ -52,7 +52,7 @@ try:
 
     seller.close()
 except KeyboardInterrupt:
-    print("Bye bitch")
+    print("Bye")
     resp = "q"
     seller.send(resp.encode())
     quit()
