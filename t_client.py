@@ -1,21 +1,32 @@
 # test client for private messaging
 
 import socket
+import select
+import sys
 
+def input_():
+    sys.stdout.write("SELLER: ")
+    sys.stdout.flush()
+
+socklist = []
 host = socket.gethostname()
 port = 8080
 
 # socket creation and binding
 seller = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+seller.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 seller.connect((host, port))
 
-seller_name = "Poopoo"
-seller.send(seller_name.encode())
-
 try:
+    socklist.append(seller)
+    socklist.append(sys.stdin)
+
+    seller_name = "Poopoo"
+    seller.send(seller_name.encode())
+
     resp = seller.recv(1024)
     resp = resp.decode()
-    print("Buyer: " + resp)
+    print("BUYER: " + resp)
 
     buyer_name = seller.recv(1024).decode()
     resp = "Hello " + buyer_name + "!"
@@ -23,37 +34,32 @@ try:
 
     stay = 0
     while stay == 0:
-        seller.setblocking(0)
-        data = seller.recv(1024).decode()
-        if data == "q":
-            print("Buyer left the chat")
-            quit()
-        # elif socket.error:
-        #     print("foo")s
-        #     print("Buyer left the chat")
-        #     stay = 1
-        # elif data == None:
-        #     print("Buyer left the chat")
-        #     stay = 1
-        # elif len(data) == 0:
-        #     resp = input("Response: " , end = '')
-        #     seller.send(resp.encode())
-        else:
-            print("Buyer: " + data)
+        read, write, err = select.select(socklist, [], [])
+        for sock in read:
+            if sock == seller:
+                data = sock.recv(1024).decode()
+                if not data:
+                    print("\nBuyer left the chat")
+                    print("Bye!")
+                    quit()
+                    stay = 1
+                else:
+                    print('\r' + data)
+                    input_()
+            elif sock == sys.stdin:
+                resp = sys.stdin.readline()
+                resp = "\rSELLER: " + resp
+                if seller.send(resp.encode()):
+                    input_()
+                    stay = 0
+            else:
+                pass
 
-        print("Response: ", end = '')
-        resp = input()
-        if resp == "q":
-            print("Bye!")
-            seller.send(resp.encode())
-            stay = 1
-        else:
-            seller.send(resp.encode())
 
-    seller.close()
 except KeyboardInterrupt:
     print("Bye")
     resp = "q"
     seller.send(resp.encode())
+    stay = 1
     quit()
     seller.close()
