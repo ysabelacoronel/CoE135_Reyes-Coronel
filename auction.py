@@ -1,4 +1,7 @@
 # auction program before incorporating in the main buyer and seller program
+# can handle mutilple client connection
+# detects invalid bid
+# can monitor number of clients connected
 
 
 import socket
