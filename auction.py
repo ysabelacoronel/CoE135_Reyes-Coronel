@@ -2,6 +2,7 @@
 # can handle mutilple client connection
 # detects invalid bid
 # can monitor number of clients connected
+# can determine highest bidder
 
 
 import socket
@@ -11,6 +12,7 @@ import time
 
 item = "ball"
 price = 10
+current_bid = price
 host = socket.gethostname()
 port = 8080
 connlist= []
@@ -32,19 +34,31 @@ def timer():
         time.sleep(1)
         sec -= 1
 
+def buyer_num(username, conn):
+    num = len(connlist)
+
+    return num
+
 def bidder_thread(conn, addr, username):    
     global current_bid
-    current_bid = price
+    global highest_bid
+    start_new_thread(buyer_num, (username, conn))
     while True:
         data = conn.recv(1024).decode()
         if not data:
-            print("Bidder left the auction")
+            print("Bidder " + username + " left the auction")
             connlist.remove(conn)
+            num = buyer_num(username, conn)
+            if num == 1:
+                if int(current_bid) > int(price):
+                    print("Item sold to " + highest_bid)
+
             break
         
         if int(data) > int(current_bid):
             current_bid = data
             highest_bid = username
+            print("Bidder: " + highest_bid)
             data = username + " bids " + data
             for c in connlist:
                 c.sendall(data.encode())
@@ -69,13 +83,7 @@ while True:
     conn.sendto(resp.encode(), addr)
     username = conn.recv(1024).decode()
     start_new_thread(bidder_thread, (conn, addr, username))
-    print("list: ", len(connlist))
-    if len(connlist) < 2:
-        if int(current_bid) == int(price):
-            resp = "Waiting for more bidders..."
-            conn.send(resp.encode())
-        else:
-            resp = "Sold item to " + username
-            conn.send(resp.encode())
+    num = buyer_num(username, conn)
+    print("Number of buyers: ", num)
 
 seller.close()
