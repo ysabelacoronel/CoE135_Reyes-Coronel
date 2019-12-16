@@ -9,7 +9,6 @@ Contributors:
 Concepts used:
  - Multithreading
  - I/O Handling
- - System Call (Time)
  - Socket Programming
  - Database (sqlite)
 
