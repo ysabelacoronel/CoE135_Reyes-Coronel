@@ -1,15 +1,27 @@
 # auction client program
 # will be incorporated to buyer program
 # can send and receive message from server
+# asks if will continue in auction
 
 import socket
 import sys
 import select
 from _thread import *
 
+stay = 0
+
 def input_():
-    sys.stdout.write("BID > ")
-    sys.stdout.flush()
+    global stay
+    print("Do you want to continue bidding (y or n)? ", end = '')
+    r = input()
+    if r == "y":
+        sys.stdout.write("BID > ")
+        sys.stdout.flush()
+    else:
+        print("Bye")
+        stay = 1
+    
+    return stay
 
 socklist = []
 host = socket.gethostname()
@@ -28,7 +40,6 @@ print("Username > ", end = '')
 username = input()
 bidder.send(username.encode())
 
-stay = 0
 while stay == 0:
     read, write, err = select.select(socklist, [], [])
     for sock in read:
@@ -42,7 +53,7 @@ while stay == 0:
                 stay = 1
             else:
                 print('\r' + data)
-                input_()
+                stay = input_()
         elif sock == sys.stdin:
             bid = sys.stdin.readline()
             if bidder.send(bid.encode()):
