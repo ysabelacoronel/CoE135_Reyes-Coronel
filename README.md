@@ -7,13 +7,14 @@ Contributors:
 # Marketplace and Auction System
 
 Concepts used:
- - Multithhreading
+ - Multithreading
  - I/O Handling
  - System Call (Time)
  - Socket Programming
+ - Database (sqlite)
 
 # Expected Results
 - Marketplace, Buyer and Seller Program
-- Simultaneoud buying, selling, and auctions
+- Simultaneous buying, selling, and auctions
 - Private Messaging
 - List of all products (available and sold)
