@@ -1,20 +1,24 @@
 import sqlite3
 from seller import Seller
 from items import Items
+from sold import Sold
+from buyer import Buyer
 
 conn1 = sqlite3.connect('seller.db')
 conn2 = sqlite3.connect('items.db')
+conn3 = sqlite3.connect('sold.db')
+conn4 = sqlite3.connect('buyer.db')
+
 c1 = conn1.cursor()
 c2 = conn2.cursor()
+c3 = conn3.cursor()
+c4 = conn4.cursor()
 
-list_of_items = []
-list_of_sellers = []
 
 # item checker
 def Item(prod, username):
     chk = 0
     exist = find_item(prod)
-    print(exist)
     if exist == []:
         chk = 1
     else:
@@ -22,7 +26,7 @@ def Item(prod, username):
         dum = len(exist)
         while i < dum:
             i +=1
-            if exist[i][3] == username:
+            if exist[i-1][3] == username:
                 chk = 0
                 break
         else:
@@ -30,9 +34,17 @@ def Item(prod, username):
     return chk
 
 # username checker
-def account(username):
+def saccount(username):
     chk = 0
     exist = get_seller_by_name(username)
+    if exist == []:
+        chk = 1
+    return chk
+
+# username checker
+def baccount(username):
+    chk = 0
+    exist = get_buyer_by_name(username)
     if exist == []:
         chk = 1
     return chk
@@ -53,6 +65,20 @@ def remove_seller(sllr):
     with conn1:
         c1.execute("DELETE from Sellers WHERE username = :username",
                   {'username': sllr.username})
+
+####################
+# Buyer functions #
+####################
+
+def insert_buyer(buyr):
+    with conn4:
+        c4.execute("INSERT INTO Buyers VALUES (:username)", {'username': buyr.username})
+
+def get_buyer_by_name(name):
+    c4.execute("SELECT * FROM Buyers WHERE username=:username", {'username': name})
+    return c4.fetchall()
+
+#def remove_buyer(buyr):
 
 ##################
 # Item Functions #
@@ -77,6 +103,24 @@ def remove_item(prod):
         c2.execute("DELETE from Items WHERE item_name = :item_name",
                   {'item_name': prod})
 
+#######################
+# Sold Item Functions #
+#######################
+
+def sold_item(prod, php, qty, sllr, byer):
+    with conn3:
+        c3.execute("INSERT INTO SoldItems VALUES (:item_name, :price, :quantity, :seller, :buyer)", {'item_name': prod, 'price': php, 'quantity': qty, 'seller':sllr, 'buyer':byer})
+
+def find_solditem(prod,sllr):
+    c3.execute("SELECT * FROM SoldItems WHERE item_name=:item_name AND seller=:seller", {'item_name': prod, 'seller': sllr})
+    return c3.fetchall()
+
+def update_quantity(prod, newq, sllr):
+    with conn3:
+        c3.execute("""UPDATE SoldItems SET quantity = :quantity
+                    WHERE item_name = :item_name AND seller = :seller""",
+                  {'item_name': prod, 'seller': sllr, 'quantity': newq})
+
 ##################
 # Seller program #
 ##################
@@ -90,19 +134,20 @@ def seller():
         seller = input('Options:\n1: Load existing account\n2: Create a new one\n')
         if seller == '1':
             username = input('Enter username: ')
-            chk = account(username)
+            chk = saccount(username)
 
             if chk == 1:
                 print('Username does not exist.')
             else:
-                print('Hello', username)
+                print('Hello', username, '!\n')
                 correct2 = 1
         elif seller == '2':
             username = input('Enter username: ')
-            chk = account(username)
+            chk = saccount(username)
             if chk == 1:
                 dummy_seller = Seller(username)
                 insert_seller(dummy_seller)
+                print('Hello', username, '!\n')
                 correct2 = 1
             else:	
                 print('Username exists already.')
@@ -112,7 +157,7 @@ def seller():
     # OPTIONS
     
     while 1:
-        option = input('A: Marketplace\nB: Auctions\nC: Items\nD: Messages\nE: Exit Program\n')
+        option = input('A: Marketplace\nB: Auctions\nC: View Sold Items\nD: Messages\nE: Exit Program\n')
         
         if option == 'A':
 			# marketplace            
@@ -141,7 +186,7 @@ def seller():
                 elif  market == '2':
                     print('Viewing all items')
                     i = 0
-                    c2.execute("select * from Items")
+                    c2.execute("SELECT * FROM Items WHERE seller= :seller", {'seller':username})
                     results = c2.fetchall()
                     num_items = len(results)
                     while i < num_items:
@@ -156,7 +201,124 @@ def seller():
         elif option == 'B':
             print('Welcome to AUCTIONS')
         elif option == 'C':
-            print('Welcome to ITEMS')
+            print('Welcome to SOLD ITEMS')        
+            c3.execute("SELECT * FROM SoldItems WHERE seller= :seller", {'seller':username})
+            results = c3.fetchall()
+            num_items = len(results)
+            print("Item Name - Quantity")
+            i = 0
+            while i < num_items:
+                i +=1
+                print("{} - {}".format(results[i-1][0], results[i-1][2]))
+
+        elif option == 'D':
+            print('Welcome to MESSAGES')
+        elif option == 'E':
+            exit('Goodbye')
+        else:
+            print('Invalid Input.')
+
+#################
+# Buyer Program #
+#################
+
+def buyer():
+    
+    # loading and creating an account
+    correct2 = 0
+    while correct2 == 0:
+        buyer = input('Options:\n1: Load existing account\n2: Create a new one\n')
+        if buyer == '1':
+            username = input('Enter username: ')
+            chk = baccount(username)
+
+            if chk == 1:
+                print('Username does not exist.')
+            else:
+                print('Hello', username, '!\n')
+                correct2 = 1
+        elif buyer == '2':
+            username = input('Enter username: ')
+            chk = baccount(username)
+            if chk == 1:
+                dummy_buyer = Buyer(username)
+                insert_buyer(dummy_buyer)
+                print('Hello', username, '!\n')
+                correct2 = 1
+            else:	
+                print('Username exists already.')
+        else:
+            print('Error: Incorrect input.')
+
+    # OPTIONS
+    
+    while 1:
+        option = input('A: Marketplace\nB: Auctions\nC: View all Purchases\nD: Messages\nE: Exit Program\n')
+        
+        if option == 'A':
+			# marketplace            
+            checker = 0
+            market = input('Options:\n1: View all items\n2: View all sellers\n3: Back\n')
+            while checker == 0:
+                if market == '1':
+                    print('Viewing all items')
+                    i = 0
+                    c2.execute("SELECT * FROM Items")
+                    results = c2.fetchall()
+                    num_items = len(results)
+                    print("Item name\t-----\tPrice - Stock")
+                    while i < num_items:
+                        i +=1
+                        print("{}. {}\t-----\t{} - {}".format(i, results[i-1][0],results[i-1][1], results[i-1][2]))
+                    buy = int(input("Enter number of item: "))
+                    print("before")
+                    
+                    # updating stock
+                    newstock = results[buy-1][2] - 1
+                    update_stock(results[buy-1][0], newstock, results[buy-1][3])
+                    
+                    # adding to database of sold items
+                    check = find_solditem(results[buy-1][0], results[buy-1][3])
+                    if check == []:
+                        sold_item(results[buy-1][0], results[buy-1][1], 1, results[buy-1][3], username)
+                    else:
+                        newq = check[0][2] + 1
+                        update_quantity(results[buy-1][0], newq, results[buy-1][3])
+
+                    c2.execute("SELECT * FROM Items WHERE item_name=:item_name AND seller=:seller", {'item_name': results[buy-1][0], 'seller': results[buy-1][3]})     
+                    results = c2.fetchall()               
+                    print(results)
+                    checker = 1    
+
+                elif  market == '2':
+                    print('Viewing all sellers')
+                    i = 0
+                    c1.execute("SELECT * FROM Sellers")
+                    results = c1.fetchall()
+                    num_items = len(results)
+                    while i < num_items:
+                        i +=1
+                        print(results[i-1][0])
+                    checker = 1        
+
+                elif market == '3':
+                    checker = 1
+                else:
+                    print('Invalid input')
+                    
+        elif option == 'B':
+            print('Welcome to AUCTIONS')
+        elif option == 'C':
+            print('Welcome to Purchases')
+            c3.execute("SELECT * FROM SoldItems WHERE buyer:=buyer", {'buyer': username})
+            results = c3.fetchall()
+            num_items = len(results)
+            print("Item Name - Quantity")
+            i = 0
+            while i < num_items:
+                i +=1
+                print("{} - {}".format(results[i-1][0], results[i-1][2]))
+
         elif option == 'D':
             print('Welcome to MESSAGES')
         elif option == 'E':
@@ -184,7 +346,7 @@ correct1 = 0
 while correct1 == 0:
 	user = input("Buyer or Seller? ")
 	if user == 'buyer':
-		#buyer()
+		buyer()
 		correct1 = 1
 	elif user == 'seller':
 		seller()
