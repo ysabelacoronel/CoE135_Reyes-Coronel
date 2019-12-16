@@ -271,7 +271,6 @@ def buyer():
                         i +=1
                         print("{}. {}\t-----\t{} - {}".format(i, results[i-1][0],results[i-1][1], results[i-1][2]))
                     buy = int(input("Enter number of item: "))
-                    print("before")
                     
                     # updating stock
                     newstock = results[buy-1][2] - 1
@@ -285,9 +284,6 @@ def buyer():
                         newq = check[0][2] + 1
                         update_quantity(results[buy-1][0], newq, results[buy-1][3])
 
-                    c2.execute("SELECT * FROM Items WHERE item_name=:item_name AND seller=:seller", {'item_name': results[buy-1][0], 'seller': results[buy-1][3]})     
-                    results = c2.fetchall()               
-                    print(results)
                     checker = 1    
 
                 elif  market == '2':
@@ -310,7 +306,7 @@ def buyer():
             print('Welcome to AUCTIONS')
         elif option == 'C':
             print('Welcome to Purchases')
-            c3.execute("SELECT * FROM SoldItems WHERE buyer:=buyer", {'buyer': username})
+            c3.execute("SELECT * FROM SoldItems WHERE buyer=:buyer", {'buyer': username})
             results = c3.fetchall()
             num_items = len(results)
             print("Item Name - Quantity")
